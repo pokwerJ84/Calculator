@@ -38,6 +38,14 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 .video-help{margin:20px 0 0;font-size:14px}
 .video-help a{color:#ceee8a;text-underline-offset:.2em}
 .video-help a:focus-visible{outline:2px solid #c5f281;outline-offset:4px}
+.card{gap:0;padding:0}
+.card h2{margin:0}
+.card-toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;padding:16px 18px;text-align:left;font:inherit;font-weight:700;color:inherit;background:transparent;border:0;border-radius:18px}
+.card-toggle::after{content:'';width:8px;height:8px;flex:none;border:solid currentColor;border-width:0 2px 2px 0;transform:rotate(45deg);margin:0 3px 4px 0}
+.card-toggle[aria-expanded=true]::after{transform:rotate(225deg);margin-bottom:0}
+.card-body{display:flex;flex-direction:column;gap:12px;padding:0 18px 18px}
+.card-body .star{align-self:flex-end}
+.grid{align-items:start}
 </style>
 </head>
 <body>
@@ -255,16 +263,24 @@ const cards = configs.map(config => {
   card.className = 'card';
   const units = config.factors ? Object.keys(config.factors) : [];
   const options = units.map(unit => '<option>' + unit + '</option>').join('');
-  card.innerHTML = '<div class="card-head"><span class="tag">' + config.category + '</span><button type="button" class="star"></button></div><h2>' + config.title + '</h2>' +
+  const panelId = 'calculator-' + config.id;
+  card.innerHTML = '<h2><button type="button" class="card-toggle" aria-expanded="false" aria-controls="' + panelId + '">' + config.title + '</button></h2>' +
+    '<div class="card-body" id="' + panelId + '" hidden><button type="button" class="star"></button>' +
     (config === orificeCalculator ? '<div class="units orifice"><label>Clona<select>' +
       orifices.map((orifice, index) => '<option value="' + index + '">' + orifice.name + ' · ' + orifice.mark + '</option>').join('') +
       '</select></label><label>Jednotka manometru<select><option>Pa</option><option>mmH₂O</option></select></label></div>' : '') +
     '<div class="fields">' + config.fields.map(field => '<label>' + field + '<input inputmode="decimal" autocomplete="off" placeholder="Zadej hodnotu"></label>').join('') + '</div>' +
     (units.length ? '<div class="units"><label>Z jednotky<select>' + options + '</select></label><button class="swap" type="button" aria-label="Otočit směr převodu">⇄</button><label>Na jednotku<select>' + options + '</select></label></div>' : '') +
-    '<div class="result"><output aria-live="polite">—</output><button class="copy" type="button" disabled>Kopírovat</button></div><p class="note" role="status" hidden></p><details><summary>Vzorec</summary><p>' + config.formula + '</p><p class="work" hidden></p></details>';
+    '<div class="result"><output aria-live="polite">—</output><button class="copy" type="button" disabled>Kopírovat</button></div><p class="note" role="status" hidden></p><details><summary>Vzorec</summary><p>' + config.formula + '</p><p class="work" hidden></p></details></div>';
   const inputs = [...card.querySelectorAll('input')];
   const [from, to] = card.querySelectorAll('select');
   const star = card.querySelector('.star');
+  const toggle = card.querySelector('.card-toggle');
+  const panel = card.querySelector('.card-body');
+  toggle.addEventListener('click', () => {
+    panel.hidden = !panel.hidden;
+    toggle.setAttribute('aria-expanded', String(!panel.hidden));
+  });
   const output = card.querySelector('output');
   const note = card.querySelector('.note');
   const copy = card.querySelector('.copy');
@@ -272,8 +288,7 @@ const cards = configs.map(config => {
   const unitLabels = card.querySelectorAll('.units label');
   const swap = card.querySelector('.swap');
   function localize() {
-    card.querySelector('.tag').textContent = translate(config.category);
-    card.querySelector('h2').textContent = translate(config.title);
+    toggle.textContent = translate(config.title);
     for (const [i, input] of inputs.entries()) {
       input.parentElement.firstChild.nodeValue = translate(config.fields[i]);
       input.placeholder = translate('Zadej hodnotu');
